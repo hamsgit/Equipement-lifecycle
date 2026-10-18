@@ -1,0 +1,316 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// 1. ASSET MODEL
+// ==========================================
+
+model Asset {
+  id        String @id @default(uuid())
+  assetCode String @unique
+  assetType String
+  status    String @default("ACTIVE")
+
+  // Relationships
+  assignments     AssetAssignment[]
+  lifecycleEvents LifecycleEvent[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assetType])
+  @@map("assets")
+}
+
+// ==========================================
+// 2. COMPONENT MODEL
+// ==========================================
+
+model Component {
+  id            String  @id @default(uuid())
+  serialNumber  String
+  partNumber    String?
+  componentType String
+  status        String  @default("UNKNOWN")
+
+  // Relationships
+  assignments     AssetAssignment[]
+  lifecycleEvents LifecycleEvent[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([serialNumber])
+  @@index([partNumber])
+  @@map("components")
+}
+
+// ==========================================
+// 3. ASSET ASSIGNMENT MODEL
+// ==========================================
+
+model AssetAssignment {
+  id String @id @default(uuid())
+
+  // Foreign keys
+  assetId     String
+  componentId String
+
+  // Historical installation period
+  installedAt DateTime?
+  removedAt   DateTime?
+
+  // Relationships
+  asset     Asset     @relation(fields: [assetId], references: [id])
+  component Component @relation(fields: [componentId], references: [id])
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assetId])
+  @@index([componentId])
+  @@index([componentId, installedAt])
+  @@map("asset_assignments")
+}
+
+// ==========================================
+// 4. DOCUMENT MODEL
+// ==========================================
+
+model Document {
+  id String @id @default(uuid())
+
+  // Original uploaded file information
+  originalFilename String
+  mimeType         String
+  fileSize         Int
+  storagePath      String
+
+  // SHA-256 fingerprint
+  sha256Hash String @unique
+
+  // Classification and processing
+  documentType     String?
+  processingStatus String @default("PENDING")
+
+  // Relationships
+  extractedFields ExtractedField[]
+  eventEvidence   EventEvidence[]
+
+  // Timestamps
+  uploadedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([documentType])
+  @@index([processingStatus])
+  @@map("documents")
+}
+
+// ==========================================
+// 5. EXTRACTED FIELD MODEL
+// ==========================================
+
+model ExtractedField {
+  id String @id @default(uuid())
+
+  // Source document
+  documentId String
+
+  // Relationship
+  document Document @relation(fields: [documentId], references: [id])
+
+  // Extracted information
+  fieldName       String
+  rawValue        String
+  normalizedValue String?
+
+  // Evidence provenance
+  pageNumber  Int?
+  sourceText  String?
+  boundingBox Json?
+
+  // Extraction metadata
+  extractionMethod String?
+  confidence       Float?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([documentId])
+  @@index([fieldName])
+  @@map("extracted_fields")
+}
+
+// ==========================================
+// 6. LIFECYCLE EVENT MODEL
+// ==========================================
+
+model LifecycleEvent {
+  id String @id @default(uuid())
+
+  // Event classification
+  eventType String
+
+  // Related equipment
+  assetId     String?
+  componentId String?
+
+  // Relationships
+  asset          Asset?          @relation(fields: [assetId], references: [id])
+  component      Component?      @relation(fields: [componentId], references: [id])
+  eventEvidence  EventEvidence[]
+
+  // Event details
+  eventDate   DateTime?
+  description String?
+
+  // Measurements such as operating hours
+  usageValue Decimal? @db.Decimal(14, 3)
+  usageUnit  String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assetId])
+  @@index([componentId])
+  @@index([eventType])
+  @@index([eventDate])
+  @@map("lifecycle_events")
+}
+
+// ==========================================
+// 7. EVENT EVIDENCE MODEL
+// ==========================================
+
+model EventEvidence {
+  id String @id @default(uuid())
+
+  // Foreign keys
+  eventId    String
+  documentId String
+
+  // Relationships
+  event    LifecycleEvent @relation(fields: [eventId], references: [id])
+  document Document       @relation(fields: [documentId], references: [id])
+
+  // Location of evidence in the PDF
+  pageNumber Int?
+  sourceText String?
+
+  // Evidence classification
+  evidenceType String @default("SUPPORTING")
+
+  // Timestamp
+  createdAt DateTime @default(now())
+
+  // Indexes and constraints
+  @@index([eventId])
+  @@index([documentId])
+  @@unique([eventId, documentId, pageNumber])
+  @@map("event_evidence")
+}
+
+
+model ValidationFinding {
+  id String @id @default(uuid())
+
+  // Validation rule identifier (VAL-01 to VAL-10)
+  ruleCode String
+
+  // Finding information
+  title       String
+  description String
+  severity    String
+
+  reviews FindingReview[]
+
+  // Review workflow
+  status String @default("OPEN")
+
+  // Affected records and supporting details
+  affectedRecords Json?
+  evidenceDetails Json?
+
+  // Detection and resolution timestamps
+  detectedAt DateTime  @default(now())
+  resolvedAt DateTime?
+
+  // Record timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ruleCode])
+  @@index([severity])
+  @@index([status])
+  @@index([detectedAt])
+  @@map("validation_findings")
+}
+
+
+model FindingReview {
+  id String @id @default(uuid())
+
+  // Related validation finding
+  findingId String
+  finding   ValidationFinding @relation(fields: [findingId], references: [id])
+
+  // Reviewer information
+  reviewerName String
+
+  // Review decision
+  previousStatus String
+  newStatus      String
+
+  // Explanation for the decision
+  comment String?
+
+  // Review timestamp
+  reviewedAt DateTime @default(now())
+
+  @@index([findingId])
+  @@index([reviewedAt])
+  @@map("finding_reviews")
+}
+
+
+model AuditLog {
+  id String @id @default(uuid())
+
+  // Who performed the action
+  actorName String
+
+  // What action was performed
+  action String
+
+  // Which record was affected
+  entityType String
+  entityId   String
+
+  // Values before and after the change
+  previousData Json?
+  newData      Json?
+
+  // Optional explanation
+  reason String?
+
+  // When the action occurred
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorName])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

@@ -1,0 +1,26 @@
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: equipment_postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: equipment_user
+      POSTGRES_PASSWORD: dev_password_change_me
+      POSTGRES_DB: equipment_db
+
+    ports:
+      - "127.0.0.1:5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U equipment_user -d equipment_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
