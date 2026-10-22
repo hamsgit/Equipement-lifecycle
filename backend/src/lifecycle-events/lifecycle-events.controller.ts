@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
 
@@ -16,16 +18,42 @@ export class LifecycleEventsController {
   ) {}
 
   @Get()
-  async findAll() {
+  findAll() {
     return this.lifecycleEventsService.findAll();
   }
 
-  @Post()
-  async create(
-    @Body() createLifecycleEventDto: CreateLifecycleEventDto,
+  @Get('asset/:assetId')
+  findByAsset(
+    @Param('assetId', ParseUUIDPipe) assetId: string,
   ) {
-    return this.lifecycleEventsService.create(
-      createLifecycleEventDto,
+    return this.lifecycleEventsService.findByAsset(assetId);
+  }
+
+  @Get('component/:componentId')
+  findByComponent(
+    @Param('componentId', ParseUUIDPipe) componentId: string,
+  ) {
+    return this.lifecycleEventsService.findByComponent(
+      componentId,
+    );
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.lifecycleEventsService.findOne(id);
+  }
+
+  @Post()
+  create(@Body() dto: CreateLifecycleEventDto) {
+    return this.lifecycleEventsService.create(dto);
+  }
+
+  @Post('reconstruct/:documentId')
+  reconstruct(
+    @Param('documentId', ParseUUIDPipe) documentId: string,
+  ) {
+    return this.lifecycleEventsService.reconstructFromDocument(
+      documentId,
     );
   }
 }

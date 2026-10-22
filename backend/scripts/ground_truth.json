@@ -1,0 +1,92 @@
+{
+  "synthetic": true,
+  "generatedAt": "2026-10-21",
+  "minimums": {
+    "assets": 3,
+    "components": 10,
+    "pdfs": 15,
+    "lifecycleEvents": 40
+  },
+  "anomalies": [
+    {
+      "ruleId": "VAL-01",
+      "affectedRecords": [
+        "11111111-1111-4111-8111-000000000202"
+      ],
+      "expectedOutcome": "Conflicting serial numbers for SYN-COMP-002 across documents 2 and 12"
+    },
+    {
+      "ruleId": "VAL-02",
+      "affectedRecords": [
+        "11111111-1111-4111-8111-000000000203",
+        "11111111-1111-4111-8111-000000000103"
+      ],
+      "expectedOutcome": "Conflicting part number for serial SYN-SERIAL-003"
+    },
+    {
+      "ruleId": "VAL-03",
+      "affectedRecords": [
+        "11111111-1111-4111-8111-000000000305"
+      ],
+      "expectedOutcome": "Removal date precedes installation date"
+    },
+    {
+      "ruleId": "VAL-04",
+      "affectedRecords": [
+        "11111111-1111-4111-8111-000000000431"
+      ],
+      "expectedOutcome": "Removal without installation on same asset"
+    },
+    {
+      "ruleId": "VAL-05",
+      "affectedRecords": [
+        "11111111-1111-4111-8111-000000000301",
+        "11111111-1111-4111-8111-000000000302"
+      ],
+      "expectedOutcome": "Overlapping installation intervals"
+    },
+    {
+      "ruleId": "VAL-06",
+      "affectedRecords": [
+        "11111111-1111-4111-8111-000000000303",
+        "11111111-1111-4111-8111-000000000304"
+      ],
+      "expectedOutcome": "Coverage gap greater than configured 30 days"
+    },
+    {
+      "ruleId": "VAL-07",
+      "affectedRecords": [
+        "11111111-1111-4111-8111-000000000402",
+        "11111111-1111-4111-8111-000000000412"
+      ],
+      "expectedOutcome": "Operating hours decrease"
+    },
+    {
+      "ruleId": "VAL-08",
+      "affectedRecords": [
+        "11111111-1111-4111-8111-000000000403",
+        "11111111-1111-4111-8111-000000000413"
+      ],
+      "expectedOutcome": "Usage count decreases"
+    },
+    {
+      "ruleId": "VAL-09",
+      "affectedRecords": [
+        "11111111-1111-4111-8111-000000000405",
+        "11111111-1111-4111-8111-000000000499"
+      ],
+      "expectedOutcome": "Conflicting measurements for identical event identity"
+    },
+    {
+      "ruleId": "VAL-10",
+      "affectedRecords": [
+        "11111111-1111-4111-8111-000000000440"
+      ],
+      "expectedOutcome": "Missing event evidence"
+    }
+  ],
+  "limitations": [
+    "VAL-04 may not trigger because earlier matching installation/assignment records exist; verify against actual rule output.",
+    "Synthetic event evidence links demonstrate database provenance but not always matching field content in the PDF; production-grade traceability is not yet satisfied."
+  ]
+}

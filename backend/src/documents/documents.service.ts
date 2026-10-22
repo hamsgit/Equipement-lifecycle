@@ -13,6 +13,7 @@ import { join } from 'path';
 import { PrismaService } from '../prisma.service';
 import { PdfExtractionService } from './pdf-extraction.service';
 import { FieldExtractionService } from './field-extraction.service';
+import { DocumentMatchingService } from './document-matching.service';
 
 type UploadedPdf = {
   originalname: string;
@@ -27,6 +28,7 @@ export class DocumentsService {
     private readonly prisma: PrismaService,
     private readonly pdfExtraction: PdfExtractionService,
     private readonly fieldExtraction: FieldExtractionService,
+    private readonly documentMatching: DocumentMatchingService,
   ) {}
 
   // GET /documents
@@ -64,6 +66,22 @@ export class DocumentsService {
     return document;
   }
 
+  // GET /documents/:id/matches
+  // Match extracted identifiers against database records
+  async findMatches(id: string) {
+    const document = await this.findOne(id);
+
+    const matches = await this.documentMatching.match(
+      document.extractedFields,
+    );
+
+    return {
+      documentId: document.id,
+      filename: document.originalFilename,
+      matches,
+    };
+  }
+
   // POST /documents/upload
   // Upload, extract, and save PDF information
   async upload(file: UploadedPdf) {
@@ -74,7 +92,7 @@ export class DocumentsService {
       );
     }
 
-    // Step 2: Validate PDF file format
+    // Step 2: Validate PDF format
     if (
       file.mimetype !== 'application/pdf' ||
       file.buffer.subarray(0, 5).toString() !== '%PDF-'
@@ -120,7 +138,7 @@ export class DocumentsService {
       recursive: true,
     });
 
-    // Step 7: Save PDF file
+    // Step 7: Save PDF
     const storagePath = join(
       uploadDirectory,
       `${sha256Hash}.pdf`,
@@ -132,7 +150,7 @@ export class DocumentsService {
     const extraction =
       await this.pdfExtraction.extractText(file.buffer);
 
-    // Step 9: Extract structured fields
+    // Step 9: Extract structured engineering fields
     const fields = this.fieldExtraction.extractFields(
       extraction.text,
     );
@@ -171,10 +189,7 @@ export class DocumentsService {
       },
     });
 
-    console.log(
-      `Document saved: ${document.id}`,
-    );
-
+    console.log(`Document saved: ${document.id}`);
     console.log(
       `Extracted fields saved: ${document.extractedFields.length}`,
     );

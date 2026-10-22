@@ -30,6 +30,11 @@ export class DocumentsController {
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.documentsService.findOne(id);
   }
+  
+@Get(':id/matches')
+findMatches(@Param('id', ParseUUIDPipe) id: string) {
+    return this.documentsService.findMatches(id);
+}
 
   // Upload PDF
   @Post('upload')
